@@ -1,26 +1,61 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Image, Button, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react'; 
 
 export default function App() {
+  const [pokemonList, setPokemonList] = useState([]); 
+  const [filteredPokemonList, setFilteredPokemonList] = useState([]); 
+  const [searchQuery, setSearchQuery] = useState(''); 
+  const [selectedPokemons, setSelectedPokemons] = useState({}); 
+
+  useEffect(() => {
+    fetch('https://pokeapi.co/api/v2/pokemon?limit=1304')
+      .then((response) => response.json())
+      .then((data) => {
+        setPokemonList(data.results); 
+        setFilteredPokemonList(data.results);
+      })
+      .catch((error) => console.error('Error fetching Pokémon list:', error));
+  }, []);
+
+  const handleCheckboxToggle = (pokemonName) => {
+    setSelectedPokemons((prevState) => ({
+      ...prevState,
+      [pokemonName]: !prevState[pokemonName],
+    }));
+  };
+
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+    const filteredData = pokemonList.filter((pokemon) =>
+      pokemon.name.toLowerCase().includes(text.toLowerCase())
+    );
+    setFilteredPokemonList(filteredData);
+  };
+
+  const renderPokemonItem = ({ item }) => (
+    <View style={styles.pokemonContainer}>
+      <TouchableOpacity onPress={() => handleCheckboxToggle(item.name)} style={styles.checkboxContainer}>
+        <View style={selectedPokemons[item.name] ? styles.checkboxChecked : styles.checkboxUnchecked} />
+      </TouchableOpacity>
+      <Text style={styles.pokemonName}>{item.name.toUpperCase()}</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <Text style={styles.cabecera}>Yeah Boy</Text>
-      <Image
-        source={require('./assets/yeah-boy.avif')} 
-        style={styles.imagen}
+      <Text style={styles.cabecera}>PokePhone</Text>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Buscar Pokémon"
+        value={searchQuery}
+        onChangeText={handleSearch}
       />
-      <Text style={styles.textos}>leeeeeroooooooy jenkins</Text>
-      <Text style={styles.textos}>alchile no se que mas poner</Text>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button1}>
-          <Text style={styles.buttonText}>vive</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button2}>
-          <Text style={styles.buttonText}>muere</Text>
-        </TouchableOpacity>
-      </View>
-
+      <FlatList
+        data={filteredPokemonList}
+        keyExtractor={(item) => item.name}
+        renderItem={renderPokemonItem} 
+      />
       <StatusBar style="auto" />
     </View>
   );
@@ -32,44 +67,51 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingTop: 80,
+    paddingTop: 50,
   },
   cabecera: {
-    fontSize: 60,
+    fontSize: 40,
     fontWeight: 'bold',
     marginBottom: 20, 
   },
-  imagen: {
-    width: 250,
-    height: 250,
-    marginBottom: 20, 
+  searchInput: {
+    width: '80%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    marginBottom: 20,
   },
-  textos: {
-    fontSize: 32,
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  buttonContainer: {
+  pokemonContainer: {
     flexDirection: 'row',
-    marginTop: 20,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    width: '100%',
   },
-  button1: {
-    backgroundColor: '#00FF00',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginHorizontal: 10, 
-  },
-  button2: {
-    backgroundColor: '#FF0000',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginHorizontal: 10, 
-  },
-  buttonText: {
-    color: '#000000',
+  pokemonName: {
     fontSize: 24,
     textAlign: 'center',
+    textTransform: 'capitalize',
+    marginLeft: 20,
+  },
+  checkboxContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxUnchecked: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: '#333',
+    marginRight: 10,
+  },
+  checkboxChecked: {
+    width: 24,
+    height: 24,
+    backgroundColor: '#007AFF',
+    marginRight: 10,
   },
 });
